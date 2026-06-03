@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CertChain — Certification de Diplômes par Blockchain</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300;1,600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — Palette industrielle/académique
+   Noir profond + Or + Vert validation
+   ═══════════════════════════════════════════════ */
+:root {
+  --ink:      #08080e;
+  --ink2:     #111118;
+  --ink3:     #1c1c28;
+  --line:     #2a2a3a;
+  --line2:    #3a3a50;
+  --muted:    #6060a0;
+  --dim:      #9090c0;
+  --text:     #e0e0f0;
+  --bright:   #ffffff;
+  --gold:     #c8a84b;
+  --gold2:    #e8c870;
+  --gold3:    rgba(200,168,75,0.12);
+  --green:    #2dd4a0;
+  --green2:   rgba(45,212,160,0.12);
+  --red:      #e05050;
+  --red2:     rgba(224,80,80,0.12);
+  --blue:     #5b9cf6;
+  --blue2:    rgba(91,156,246,0.10);
+  --mono:     'IBM Plex Mono', monospace;
+  --serif:    'Fraunces', serif;
+  --r:        10px;
+  --r2:       16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Texture grain */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--ink2); }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
+
+/* ══════════════════════════════════════
+   NAV
+   ══════════════════════════════════════ */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  height: 58px;
+  background: rgba(8,8,14,0.92);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 0;
+}
+
+.nav-brand {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--gold2);
+  letter-spacing: 1px;
+  margin-right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.nav-brand .hex {
+  width: 22px; height: 22px;
+  background: var(--gold);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: hexPulse 3s ease-in-out infinite;
+}
+@keyframes hexPulse {
+  0%,100% { transform: scale(1); opacity:1; }
+  50% { transform: scale(1.15); opacity:0.7; }
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: var(--r);
+  transition: all 0.2s;
+  position: relative;
+}
+.nav-tab:hover { color: var(--dim); background: var(--ink3); }
+.nav-tab.active {
+  color: var(--gold2);
+  background: var(--gold3);
+}
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 20px; height: 2px;
+  background: var(--gold);
+  border-radius: 1px;
+}
+
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.wallet-btn {
+  background: var(--gold3);
+  border: 1px solid var(--gold);
+  color: var(--gold2);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  padding: 7px 14px;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.wallet-btn:hover { background: rgba(200,168,75,0.22); }
+.wallet-btn.connected {
+  background: var(--green2);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.net-badge {
+  font-size: 0.65rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+}
+.net-badge.live { border-color: var(--green); color: var(--green); }
+
+/* ══════════════════════════════════════
+   LAYOUT
+   ══════════════════════════════════════ */
+main { padding-top: 58px; }
+
+.page { display: none; }
+.page.active { display: block; animation: fadeUp 0.3s ease; }
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.container { max-width: 1160px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+/* ══════════════════════════════════════
+   COMPONENTS
+   ══════════════════════════════════════ */
+
+/* ── CARD ── */
+.card {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--line2); }
+.card.gold-card { border-color: rgba(200,168,75,0.3); background: linear-gradient(135deg, var(--ink2) 0%, rgba(200,168,75,0.04) 100%); }
+.card.green-card { border-color: rgba(45,212,160,0.3); background: var(--green2); }
+.card.red-card { border-color: rgba(224,80,80,0.3); background: var(--red2); }
+
+/* ── GRID ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* ── LABEL ── */
+.label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ── INPUTS ── */
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200,168,75,0.1);
+}
+.field select option { background: var(--ink2); }
+.field input::placeholder { color: var(--muted); }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 11px 20px;
+  border-radius: var(--r);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn-gold {
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 700;
+}
+.btn-gold:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(200,168,75,0.25); }
+.btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--line2);
+  color: var(--dim);
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold2); }
+.btn-green {
+  background: var(--green);
+  color: var(--ink);
+  font-weight: 700;
+}
+.btn-green:hover { opacity: 0.85; }
+.btn-red {
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+.btn-red:hover { background: var(--red2); }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.badge-green { background: var(--green2); color: var(--green); border: 1px solid rgba(45,212,160,0.3); }
+.badge-red   { background: var(--red2); color: var(--red); border: 1px solid rgba(224,80,80,0.3); }
+.badge-gold  { background: var(--gold3); color: var(--gold2); border: 1px solid rgba(200,168,75,0.3); }
+.badge-blue  { background: var(--blue2); color: var(--blue); border: 1px solid rgba(91,156,246,0.3); }
+
+/* ── MONO BOX ── */
+.mono-box {
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--gold2);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--line); margin: 1.5rem 0; }
+
+/* ── SECTION HEADER ── */
+.section-header { margin-bottom: 2rem; }
+.section-header h2 {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--bright);
+  margin-bottom: 4px;
+}
+.section-header p { color: var(--muted); font-size: 0.82rem; }
+.section-header .tag {
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ── SPINNER ── */
+.spin {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(8,8,14,0.3);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TABLE ── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl thead tr { border-bottom: 1px solid var(--line); }
+.tbl th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.tbl td {
+  padding: 11px 12px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid rgba(42,42,58,0.5);
+}
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr { transition: background 0.15s; }
+.tbl tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* ── LOG ── */
+.tx-log {
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  height: 180px;
+  overflow-y: auto;
+  font-size: 0.72rem;
+}
+.tx-log .entry { padding: 4px 0; border-bottom: 1px solid rgba(42,42,58,0.4); display: flex; gap: 8px; }
+.tx-log .entry:last-child { border-bottom: none; }
+.tx-log .ts { color: var(--muted); white-space: nowrap; }
+.tx-log .msg-ok { color: var(--green); }
+.tx-log .msg-pending { color: var(--gold2); }
+.tx-log .msg-err { color: var(--red); }
+.tx-log .msg-info { color: var(--dim); }
+
+/* ── NOTIF ── */
+#notif {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  z-index: 9000;
+  max-width: 340px;
+  background: var(--ink3);
+  border: 1px solid var(--line2);
+  border-radius: var(--r2);
+  padding: 13px 18px;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(130%);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+#notif.show { transform: translateX(0); }
+#notif.ok  { border-color: var(--green); }
+#notif.err { border-color: var(--red); }
+
+/* ══════════════════════════════════════
+   PAGE: ACCUEIL
+   ══════════════════════════════════════ */
+.hero {
+  min-height: calc(100vh - 58px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(200,168,75,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 20% 20%, rgba(45,212,160,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Animated grid lines */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(200,168,75,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,168,75,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridMove 20s linear infinite;
+  pointer-events: none;
+}
+@keyframes gridMove {
+  from { background-position: 0 0; }
+  to   { background-position: 60px 60px; }
+}
+
+.hero-eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: '';
+  width: 30px; height: 1px;
+  background: var(--gold);
+  opacity: 0.4;
+}
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--bright);
+  margin-bottom: 1rem;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--gold2);
+}
+
+.hero-sub {
+  max-width: 540px;
+  font-size: 0.88rem;
+  color: var(--dim);
+  line-height: 1.8;
+  margin-bottom: 2.5rem;
+}
+
+.hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+
+.hero-stats {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  max-width: 700px;
+}
+.hstat-num {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--gold2);
+}
+.hstat-lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+
+/* ── HOW IT WORKS ── */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+.step {
+  position: relative;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--ink2);
+}
+.step-num {
+  font-family: var(--serif);
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--line2);
+  position: absolute;
+  top: 10px; right: 14px;
+  line-height: 1;
+}
+.step h3 { font-size: 0.85rem; color: var(--bright); margin-bottom: 6px; font-weight: 600; }
+.step p { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+
+/* ══════════════════════════════════════
+   PAGE: EMETTRE
+   ══════════════════════════════════════ */
+.emit-layout { display: grid; grid-template-columns: 1fr 420px; gap: 1.5rem; }
+@media (max-width: 960px) { .emit-layout { grid-template-columns: 1fr; } }
+
+/* Diploma certificate preview */
+.cert {
+  background: linear-gradient(160deg, #1a1424 0%, #0e1a14 100%);
+  border: 1px solid var(--gold);
+  border-radius: var(--r2);
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cert::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.cert-watermark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--serif);
+  font-size: 7rem;
+  font-weight: 900;
+  color: rgba(200,168,75,0.04);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.cert-logo { font-size: 2rem; margin-bottom: 6px; }
+.cert-univ { font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+.cert-line { width: 60px; height: 1px; background: var(--gold); margin: 14px auto; }
+.cert-title { font-family: var(--serif); font-size: 0.85rem; color: var(--gold2); font-style: italic; font-weight: 300; margin-bottom: 12px; }
+.cert-degree { font-family: var(--serif); font-size: 1.4rem; font-weight: 900; color: var(--bright); margin-bottom: 10px; }
+.cert-name { font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--gold2); margin-bottom: 6px; }
+.cert-field { font-size: 0.75rem; color: var(--dim); margin-bottom: 14px; }
+.cert-date { font-size: 0.65rem; letter-spacing: 1px; color: var(--muted); }
+.cert-qr {
+  width: 72px; height: 72px;
+  background: white;
+  margin: 16px auto 0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  color: var(--ink);
+  font-family: var(--mono);
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+/* QR pattern simulation */
+.qr-inner {
+  display: grid;
+  grid-template-columns: repeat(7,1fr);
+  gap: 1px;
+  width: 100%;
+  height: 100%;
+}
+.qr-cell { background: var(--ink); border-radius: 1px; }
+.qr-cell.w { background: white; }
+
+/* PROGRESS STEPS */
+.emit-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+}
+.estep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.estep.active { color: var(--gold2); }
+.estep.done { color: var(--green); }
+.estep-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--ink3);
+  border: 2px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.estep.active .estep-dot { border-color: var(--gold); color: var(--gold2); background: var(--gold3); }
+.estep.done .estep-dot { border-color: var(--green); background: var(--green2); color: var(--green); }
+.estep-line { flex: 1; height: 1px; background: var(--line); min-width: 20px; }
+
+/* ══════════════════════════════════════
+   PAGE: VÉRIFIER
+   ══════════════════════════════════════ */
+.verify-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+.vmode {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 8px 16px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vmode:hover { border-color: var(--line2); color: var(--dim); }
+.vmode.active { background: var(--gold3); border-color: var(--gold); color: var(--gold2); }
+
+.verify-result {
+  border-radius: var(--r2);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  display: none;
+  animation: fadeUp 0.3s ease;
+}
+.verify-result.valid {
+  display: block;
+  background: var(--green2);
+  border: 1px solid rgba(45,212,160,0.3);
+}
+.verify-result.invalid {
+  display: block;
+  background: var(--red2);
+  border: 1px solid rgba(224,80,80,0.3);
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+.result-icon { font-size: 2.2rem; }
+.result-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; }
+.result-title.ok { color: var(--green); }
+.result-title.bad { color: var(--red); }
+
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 1rem; }
+.rfield label { font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.rfield span { display: block; font-size: 0.85rem; color: var(--bright); margin-top: 3px; }
+
+/* ══════════════════════════════════════
+   PAGE: EXPLORER
+   ══════════════════════════════════════ */
+.chain-scroll {
+  overflow-x: auto;
+  padding: 1.5rem 0;
+}
+.chain-row {
+  display: flex;
+  align-items: center;
+  min-width: max-content;
+  gap: 0;
+}
+
+.blk {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-width: 175px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.blk:hover { border-color: var(--gold); transform: translateY(-3px); }
+.blk.genesis { border-color: rgba(45,212,160,0.4); }
+.blk.latest  { border-color: var(--gold); animation: blkPulse 2s ease-in-out infinite; }
+@keyframes blkPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(200,168,75,0.15); }
+  50%     { box-shadow: 0 0 25px rgba(200,168,75,0.4); }
+}
+.blk-label { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.blk-num   { font-family: var(--serif); font-size: 1rem; font-weight: 700; color: var(--bright); margin-bottom: 4px; }
+.blk-hash  { font-size: 0.6rem; color: var(--gold2); word-break: break-all; line-height: 1.4; margin-bottom: 6px; }
+.blk-tx    { font-size: 0.72rem; color: var(--dim); }
+
+.chain-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+.chain-arrow svg { color: var(--gold); opacity: 0.5; }
+
+/* CHART */
+.mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 80px;
+  padding: 10px 0;
+}
+.bar {
+  flex: 1;
+  background: linear-gradient(to top, var(--gold) 0%, var(--gold2) 100%);
+  border-radius: 3px 3px 0 0;
+  opacity: 0.6;
+  min-width: 12px;
+  transition: opacity 0.2s;
+}
+.bar:hover { opacity: 1; }
+
+/* ══════════════════════════════════════
+   PAGE: ADMIN
+   ══════════════════════════════════════ */
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+}
+.role-owner    { background: var(--gold3); color: var(--gold2); border: 1px solid rgba(200,168,75,0.3); }
+.role-emitter  { background: var(--blue2); color: var(--blue); border: 1px solid rgba(91,156,246,0.3); }
+.role-revoked  { background: var(--red2); color: var(--red); border: 1px solid rgba(224,80,80,0.3); }
+
+/* KPI CARDS */
+.kpi {
+  padding: 1.2rem;
+  background: var(--ink);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.kpi-val { font-family: var(--serif); font-size: 2rem; font-weight: 900; color: var(--gold2); }
+.kpi-lbl { font-size: 0.62rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+@media (max-width: 800px) { .g4 { grid-template-columns: 1fr 1fr; } }
+
+/* ══════════════════════════════════════
+   DIPLOMA PRINT MODAL
+   ══════════════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 800;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.modal-overlay.open { display: flex; animation: fadeUp 0.3s ease; }
+.modal-box {
+  background: var(--ink2);
+  border: 1px solid var(--gold);
+  border-radius: var(--r2);
+  padding: 2rem;
+  max-width: 600px;
+  width: 94%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.modal-close {
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  font-size: 1.2rem; font-family: var(--mono);
+  transition: color 0.2s;
+}
+.modal-close:hover { color: var(--red); }
+
+/* ══════════════════════════════════════
+   MONITORING PANEL
+   ══════════════════════════════════════ */
+.monitor-panel {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s;
+}
+.monitor-panel:hover { border-color: var(--line2); }
+
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 700px) { .monitor-grid { grid-template-columns: 1fr; } }
+
+.monitor-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--r);
+  padding: 10px 14px;
+}
+.monitor-box .m-label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.monitor-box .m-val {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--bright);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.monitor-box .m-sub {
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.syslog-box {
+  background: rgba(0,0,0,0.35);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 2;
+}
+.syslog-ok   { color: #4ade80; }
+.syslog-warn { color: #facc15; }
+.syslog-err  { color: var(--red); }
+.syslog-ip   { color: var(--muted); }
+
+.snmp-footer {
+  margin-top: 10px;
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-align: right;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 8px;
+}
+.snmp-footer span { color: var(--gold2); }
+
+/* Liaison réseau badge */
+.net-liaison-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: var(--green);
+  border: 1px solid rgba(45,212,160,0.3);
+  background: var(--green2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-left: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NOTIFICATION ═══════════ -->
+<div id="notif"></div>
+
+<!-- ═══════════ MODAL DIPLÔME ═══════════ -->
+<div class="modal-overlay" id="diplomaModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="font-family:var(--serif);font-size:1rem;font-weight:600;color:var(--bright)">📜 Détail du Diplôme</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <div class="nav-brand">
+    <div class="hex"></div>
+    CertChain
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('accueil',this)">Accueil</button>
+    <button class="nav-tab" onclick="showPage('emettre',this)">Émettre</button>
+    <button class="nav-tab" onclick="showPage('verifier',this)">Vérifier</button>
+    <button class="nav-tab" onclick="showPage('explorer',this)">Explorer</button>
+    <button class="nav-tab" onclick="showPage('admin',this)">Admin</button>
+  </div>
+  <div class="nav-right">
+    <span class="net-badge live" id="netBadge">◉ Sepolia Testnet</span>
+    <span class="net-liaison-badge" title="Hébergé sur Web Server 192.168.10.10 — VLAN 10 DMZ">⬡ VLAN 10 · 192.168.10.10</span>
+    <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">⬡ Connecter Wallet</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE : ACCUEIL
+     ══════════════════════════════════════════════════ -->
+<div class="page active" id="page-accueil">
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+
+    <div class="hero-eyebrow">Blockchain Académique</div>
+    <h1>Certifiez chaque<br><em>diplôme</em> pour toujours</h1>
+    <p class="hero-sub">CertChain ancre cryptographiquement chaque diplôme dans la blockchain Ethereum. Infalsifiable. Vérifiable en 3 secondes. Décentralisé à vie.</p>
+
+    <div class="hero-cta">
+      <button class="btn btn-gold" onclick="showPage('emettre', document.querySelectorAll('.nav-tab')[1])">⛓ Émettre un Diplôme</button>
+      <button class="btn btn-outline" onclick="showPage('verifier', document.querySelectorAll('.nav-tab')[2])">🔍 Vérifier un Diplôme</button>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hstat-num" id="hs1">0</div>
+        <div class="hstat-lbl">Diplômes certifiés</div>
+      </div>
+      <div>
+        <div class="hstat-num" id="hs2">0</div>
+        <div class="hstat-lbl">Universités partenaires</div>
+      </div>
+      <div>
+        <div class="hstat-num" id="hs3">0</div>
+        <div class="hstat-lbl">Vérifications</div>
+      </div>
+      <div>
+        <div class="hstat-num">100%</div>
+        <div class="hstat-lbl">Fiabilité cryptographique</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">// Fonctionnement</span>
+      <h2>Comment ça marche</h2>
+      <p>Trois étapes simples pour une certification permanente et vérifiable.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>L'université émet</h3>
+        <p>L'établissement autorisé remplit le formulaire. Le système génère un hash SHA-256 unique du diplôme.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Ancrage blockchain</h3>
+        <p>Le hash est enregistré dans le smart contract Ethereum via une transaction signée. Immuable, tracé, horodaté.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Vérification libre</h3>
+        <p>N'importe qui — recruteur, institution — interroge le contrat avec le hash ou le QR code. Résultat instantané.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Audit permanent</h3>
+        <p>Chaque événement est loggé on-chain. L'explorateur montre l'historique complet de toutes les certifications.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE : ÉMETTRE
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="page-emettre">
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">// Smart Contract → issueDiploma()</span>
+      <h2>Émettre un Diplôme</h2>
+      <p>Certifiez un diplôme sur la blockchain. Un hash SHA-256 est généré et enregistré dans le contrat.</p>
+    </div>
+
+    <!-- Étapes visuelles -->
+    <div class="emit-steps" style="margin-bottom:1.8rem;">
+      <div class="estep active" id="est1">
+        <div class="estep-dot">1</div>
+        <span>Saisie</span>
+      </div>
+      <div class="estep-line"></div>
+      <div class="estep" id="est2">
+        <div class="estep-dot">2</div>
+        <span>Hash SHA-256</span>
+      </div>
+      <div class="estep-line"></div>
+      <div class="estep" id="est3">
+        <div class="estep-dot">3</div>
+        <span>Transaction</span>
+      </div>
+      <div class="estep-line"></div>
+      <div class="estep" id="est4">
+        <div class="estep-dot">✓</div>
+        <span>Confirmé</span>
+      </div>
+    </div>
+
+    <div class="emit-layout">
+      <!-- FORMULAIRE -->
+      <div>
+        <div class="card" style="margin-bottom:1.2rem;">
+          <div class="label" style="margin-bottom:12px;">👤 Informations Étudiant</div>
+          <div class="g2">
+            <div class="field">
+              <label>Prénom et Nom complet *</label>
+              <input type="text" id="f-nom" placeholder="Ahmed Ben Salah" oninput="refreshPreview()">
+            </div>
+            <div class="field">
+              <label>CIN / N° Étudiant *</label>
+              <input type="text" id="f-cin" placeholder="12345678" oninput="refreshPreview()">
+            </div>
+          </div>
+          <div class="label" style="margin:4px 0 12px;">🏛️ Informations Académiques</div>
+          <div class="g2">
+            <div class="field">
+              <label>Université *</label>
+              <select id="f-univ" onchange="refreshPreview()">
+                <option value="">— Sélectionner —</option>
+                <option>Université de Tunis El Manar</option>
+                <option>Université de Carthage</option>
+                <option>Université de Sfax</option>
+                <option>Université de Sousse</option>
+                <option>Université de Monastir</option>
+                <option>École Polytechnique de Tunis</option>
+                <option>ESPRIT</option>
+                <option>ISAMM</option>
+                <option>FST Tunis</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Filière / Spécialité *</label>
+              <input type="text" id="f-filiere" placeholder="Génie Informatique" oninput="refreshPreview()">
+            </div>
+            <div class="field">
+              <label>Type de Diplôme *</label>
+              <select id="f-type" onchange="refreshPreview()">
+                <option value="">— Sélectionner —</option>
+                <option>Licence</option>
+                <option>Master</option>
+                <option>Doctorat</option>
+                <option>Ingénieur</option>
+                <option>BTS</option>
+                <option>DUT</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Mention *</label>
+              <select id="f-mention" onchange="refreshPreview()">
+                <option>Passable</option>
+                <option>Assez Bien</option>
+                <option>Bien</option>
+                <option selected>Très Bien</option>
+                <option>Excellent</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Date d'obtention *</label>
+              <input type="date" id="f-date" oninput="refreshPreview()">
+            </div>
+            <div class="field">
+              <label>Année académique</label>
+              <input type="text" id="f-annee" placeholder="2023–2024" oninput="refreshPreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- HASH PREVIEW -->
+        <div class="card" style="margin-bottom:1.2rem;">
+          <div class="label" style="margin-bottom:8px;">🔐 Hash SHA-256 généré (identifiant unique)</div>
+          <div class="mono-box" id="hashDisplay">— remplissez le formulaire pour générer le hash —</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;">Ce hash est calculé localement avec la Web Crypto API (SHA-256 natif du navigateur).</div>
+          <div style="font-size:0.65rem;color:var(--blue);margin-top:6px;padding:6px 10px;background:var(--blue2);border-radius:6px;border:1px solid rgba(91,156,246,0.2);">
+            ⬡ Liaison réseau : hash envoyé via API Server (192.168.10.20) → Blockchain Node (192.168.20.10) · Port RPC 8545
+          </div>
+        </div>
+
+        <!-- ÉMETTRE BUTTON -->
+        <button class="btn btn-gold btn-full" id="emitBtn" onclick="emettre()" style="font-size:0.85rem;padding:14px;">
+          ⛓ Certifier sur la Blockchain
+        </button>
+
+        <!-- LOG -->
+        <div style="margin-top:1.2rem;">
+          <div class="label" style="margin-bottom:6px;">📡 Journal des transactions</div>
+          <div class="tx-log" id="txLog">
+            <div class="entry"><span class="ts">—</span><span class="msg-info">En attente...</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APERÇU + INFOS -->
+      <div>
+        <div class="card" style="margin-bottom:1.2rem;">
+          <div class="label" style="margin-bottom:12px;">🎓 Aperçu du Diplôme</div>
+          <div class="cert">
+            <div class="cert-watermark">✦</div>
+            <div class="cert-logo">🏛</div>
+            <div class="cert-univ" id="pv-univ">Université</div>
+            <div class="cert-line"></div>
+            <div class="cert-title">Certifie que</div>
+            <div class="cert-name" id="pv-nom">Nom de l'étudiant</div>
+            <div class="cert-title" style="margin-top:4px;">a obtenu le diplôme de</div>
+            <div class="cert-degree" id="pv-type">Diplôme</div>
+            <div class="cert-field" id="pv-filiere">Spécialité</div>
+            <div class="cert-line"></div>
+            <div class="cert-date" id="pv-date">Date d'obtention</div>
+            <div class="cert-qr">
+              <div class="qr-inner" id="qrGrid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wallet info -->
+        <div class="card gold-card">
+          <div class="label" style="margin-bottom:8px;">⚡ Exigences</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:var(--dim);">
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <span id="req1" style="color:var(--muted)">○</span>
+              <span>Wallet connecté avec droits émetteur</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <span id="req2" style="color:var(--muted)">○</span>
+              <span>Tous les champs obligatoires remplis</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <span id="req3" style="color:var(--muted)">○</span>
+              <span>Hash SHA-256 généré</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE : VÉRIFIER
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="page-verifier">
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">// Smart Contract → quickVerify() + getDiploma()</span>
+      <h2>Vérifier un Diplôme</h2>
+      <p>Interrogez directement le smart contract pour valider l'authenticité d'un diplôme.</p>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div class="verify-modes">
+          <button class="vmode active" onclick="setVMode('hash',this)">Par Hash</button>
+          <button class="vmode" onclick="setVMode('etudiant',this)">Par Étudiant</button>
+          <button class="vmode" onclick="setVMode('qr',this)">Simuler QR</button>
+        </div>
+
+        <!-- MODE HASH -->
+        <div id="vm-hash">
+          <div class="card">
+            <div class="field">
+              <label>Hash SHA-256 du diplôme</label>
+              <input type="text" id="v-hash" placeholder="Collez le hash ou les premières lettres..." style="font-size:0.75rem;">
+            </div>
+            <button class="btn btn-green btn-full" onclick="verifierParHash()">🔍 Vérifier l'Authenticité</button>
+          </div>
+        </div>
+
+        <!-- MODE ÉTUDIANT -->
+        <div id="vm-etudiant" style="display:none;">
+          <div class="card">
+            <div class="field">
+              <label>Nom de l'étudiant ou CIN</label>
+              <input type="text" id="v-nom" placeholder="Ahmed Ben Salah  ou  12345678">
+            </div>
+            <div class="field">
+              <label>Université (optionnel)</label>
+              <select id="v-univ">
+                <option value="">— Toutes les universités —</option>
+                <option>Université de Tunis El Manar</option>
+                <option>Université de Carthage</option>
+                <option>Université de Sfax</option>
+              </select>
+            </div>
+            <button class="btn btn-green btn-full" onclick="verifierParEtudiant()">🔍 Rechercher</button>
+          </div>
+        </div>
+
+        <!-- MODE QR -->
+        <div id="vm-qr" style="display:none;">
+          <div class="card" style="text-align:center;">
+            <div style="background:var(--ink);border:2px dashed var(--line2);border-radius:var(--r);padding:2.5rem;cursor:pointer;margin-bottom:1rem;" onclick="simulerQR()">
+              <div style="font-size:3rem;margin-bottom:8px;">📷</div>
+              <div style="font-size:0.78rem;color:var(--muted);">Cliquez pour simuler le scan d'un QR code</div>
+            </div>
+            <button class="btn btn-green btn-full" onclick="simulerQR()">📷 Simuler Scan QR Code</button>
+          </div>
+        </div>
+
+        <!-- RÉSULTAT -->
+        <div class="verify-result" id="verifyResult"></div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div>
+        <div class="card">
+          <div class="label" style="margin-bottom:12px;">📋 Historique des vérifications</div>
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Hash (extrait)</th>
+                <th>Résultat</th>
+                <th>Heure</th>
+              </tr>
+            </thead>
+            <tbody id="verifHistoryTbody"></tbody>
+          </table>
+          <div id="verifEmpty" style="text-align:center;padding:2rem;color:var(--muted);font-size:0.78rem;">
+            Aucune vérification effectuée
+          </div>
+        </div>
+
+        <div class="card gold-card" style="margin-top:1.2rem;">
+          <div class="label" style="margin-bottom:8px;">ℹ️ Comment vérifier</div>
+          <ol style="padding-left:1.2rem;font-size:0.78rem;color:var(--dim);line-height:2;">
+            <li>Obtenez le hash ou le QR du diplôme à vérifier</li>
+            <li>Collez le hash dans le champ ci-contre</li>
+            <li>Le smart contract compare et répond instantanément</li>
+            <li>Le résultat inclut les données complètes du diplôme</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE : EXPLORER
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="page-explorer">
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">// On-Chain Data</span>
+      <h2>Explorateur Blockchain</h2>
+      <p>Visualisation des blocs et du registre complet des diplômes certifiés.</p>
+    </div>
+
+    <!-- Chaîne -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="label" style="margin-bottom:12px;">⛓ Chaîne de blocs — Contrat DiplomeRegistry</div>
+      <div class="chain-scroll">
+        <div class="chain-row" id="chainRow"></div>
+      </div>
+    </div>
+
+    <!-- MONITORING PANEL — Liaison réseau VLAN 30 -->
+    <div class="monitor-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="label" style="margin:0;">📡 Monitoring réseau — SNMP live feed</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.62rem;color:var(--green);">● Actif</span>
+          <span style="font-size:0.62rem;color:var(--muted);">sync toutes les 30s</span>
+        </div>
+      </div>
+
+      <div class="monitor-grid">
+        <div class="monitor-box">
+          <div class="m-label">Source</div>
+          <div class="m-val">192.168.30.10</div>
+          <div class="m-sub">Monitoring Server — VLAN 30</div>
+        </div>
+        <div class="monitor-box">
+          <div class="m-label">Cibles surveillées</div>
+          <div class="m-val">192.168.20.10<br>192.168.20.11</div>
+          <div class="m-sub">Blockchain Nodes — VLAN 20</div>
+        </div>
+        <div class="monitor-box">
+          <div class="m-label">Protocole</div>
+          <div class="m-val">SNMP v2c</div>
+          <div class="m-sub">Community : CertChain-Monitor</div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+        <div class="label" style="margin-bottom:8px;">Alertes Syslog détectées</div>
+        <div class="syslog-box" id="syslogBox">
+          <span class="syslog-ok">✓</span> <span class="syslog-ip">192.168.20.10</span> sync OK — Block #<span id="lastBlockNum">4821098</span><br>
+          <span class="syslog-ok">✓</span> <span class="syslog-ip">192.168.20.11</span> sync OK — 0 anomalie<br>
+          <span class="syslog-warn">⚠</span> <span class="syslog-ip">192.168.10.50</span> → 192.168.20.10 : <span class="syslog-err">accès refusé (ACL 100)</span> — 3 tentatives bloquées<br>
+          <span class="syslog-ok">✓</span> <span class="syslog-ip">192.168.40.20</span> Admin PC — dernière émission il y a <span id="lastEmitTime">2 min</span>
+        </div>
+      </div>
+
+      <div class="snmp-footer">
+        Dernière sync SNMP : <span id="snmpLastSync">--:--:--</span> &nbsp;·&nbsp; Intervalle : 30s &nbsp;·&nbsp; VLAN 30 → VLAN 20
+      </div>
+    </div>
+    <!-- FIN MONITORING PANEL -->
+
+    <!-- Stats -->
+    <div class="g3" style="margin-bottom:1.5rem;" id="explorerStats">
+      <div class="card" style="display:flex;gap:14px;align-items:center;">
+        <div style="font-size:2rem;">📄</div>
+        <div>
+          <div style="font-family:var(--serif);font-size:1.5rem;font-weight:900;color:var(--gold2)" id="expTotal">0</div>
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Diplômes total</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;gap:14px;align-items:center;">
+        <div style="font-size:2rem;">🏛</div>
+        <div>
+          <div style="font-family:var(--serif);font-size:1.5rem;font-weight:900;color:var(--gold2)" id="expUnivs">0</div>
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Émetteurs actifs</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;gap:14px;align-items:center;">
+        <div style="font-size:2rem;">🔍</div>
+        <div>
+          <div style="font-family:var(--serif);font-size:1.5rem;font-weight:900;color:var(--gold2)" id="expVerifs">0</div>
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Vérifications</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registre -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <div class="label" style="margin:0;">📋 Registre des diplômes certifiés</div>
+        <div style="font-size:0.7rem;color:var(--muted)" id="regCount">0 entrées</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Étudiant</th>
+              <th>Université</th>
+              <th>Filière</th>
+              <th>Type</th>
+              <th>Mention</th>
+              <th>Date</th>
+              <th>Hash (extrait)</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="registreTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE : ADMIN
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="page-admin">
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">// Panneau Propriétaire du Contrat</span>
+      <h2>Administration</h2>
+      <p>Gestion des émetteurs autorisés et du smart contract. Accès réservé à l'owner.</p>
+    </div>
+
+    <!-- KPIs -->
+    <div class="g4" style="margin-bottom:1.5rem;">
+      <div class="kpi">
+        <div class="kpi-val" id="kpi1">0</div>
+        <div class="kpi-lbl">Diplômes total</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi2">0</div>
+        <div class="kpi-lbl">Émetteurs actifs</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi3">0</div>
+        <div class="kpi-lbl">Vérifications</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi4">0</div>
+        <div class="kpi-lbl">Révocations</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div>
+        <!-- AJOUTER ÉMETTEUR -->
+        <div class="card" style="margin-bottom:1.2rem;">
+          <div class="label" style="margin-bottom:12px;">➕ Accorder le rôle Émetteur</div>
+          <div class="field">
+            <label>Adresse Ethereum de l'institution</label>
+            <input type="text" id="a-addr" placeholder="0x742d35Cc6634C0532925a3b844Bc454e4438f44e">
+          </div>
+          <div class="field">
+            <label>Nom de l'institution</label>
+            <input type="text" id="a-nom" placeholder="Université de Tunis El Manar">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="ajouterEmetteur()">✅ Accorder le rôle</button>
+        </div>
+
+        <!-- CONTRAT INFO -->
+        <div class="card gold-card">
+          <div class="label" style="margin-bottom:8px;">📋 Smart Contract</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Adresse du contrat (Sepolia)</div>
+          <div class="mono-box" style="margin-bottom:12px;">0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Owner (vous)</div>
+          <div class="mono-box" id="ownerAddr">— connectez votre wallet —</div>
+          <hr class="divider">
+          <!-- Liaison réseau -->
+          <div style="font-size:0.65rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Infrastructure réseau</div>
+          <div style="font-size:0.72rem;display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(91,156,246,0.05);border-radius:6px;border:1px solid rgba(91,156,246,0.15);">
+              <span style="color:var(--muted);">Web Server (Interface)</span>
+              <span style="font-family:var(--mono);color:var(--blue);">192.168.10.10</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(91,156,246,0.05);border-radius:6px;border:1px solid rgba(91,156,246,0.15);">
+              <span style="color:var(--muted);">API Server (Backend)</span>
+              <span style="font-family:var(--mono);color:var(--blue);">192.168.10.20</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(45,212,160,0.05);border-radius:6px;border:1px solid rgba(45,212,160,0.15);">
+              <span style="color:var(--muted);">Blockchain Node 1</span>
+              <span style="font-family:var(--mono);color:var(--green);">192.168.20.10</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(45,212,160,0.05);border-radius:6px;border:1px solid rgba(45,212,160,0.15);">
+              <span style="color:var(--muted);">Blockchain Node 2</span>
+              <span style="font-family:var(--mono);color:var(--green);">192.168.20.11</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(200,168,75,0.05);border-radius:6px;border:1px solid rgba(200,168,75,0.15);">
+              <span style="color:var(--muted);">Admin PC (Vous — VLAN 40)</span>
+              <span style="font-family:var(--mono);color:var(--gold2);">192.168.40.20</span>
+            </div>
+          </div>
+          <hr class="divider">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="pauserContrat()" style="flex:1;">⏸ Pause</button>
+            <button class="btn btn-outline" onclick="notify('✅ Contrat réactivé','ok')" style="flex:1;">▶ Reprendre</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTE ÉMETTEURS -->
+      <div class="card">
+        <div class="label" style="margin-bottom:12px;">🏛 Émetteurs autorisés</div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Institution</th>
+              <th>Adresse</th>
+              <th>Diplômes</th>
+              <th>Rôle</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="emetteursTbody">
+            <tr>
+              <td>Administrateur Système</td>
+              <td><span style="font-size:0.65rem;color:var(--gold2)">0x1234...abcd</span></td>
+              <td>0</td>
+              <td><span class="role-chip role-owner">Owner</span></td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LOG ADMIN -->
+    <div class="card" style="margin-top:1.2rem;">
+      <div class="label" style="margin-bottom:8px;">📜 Journal d'administration</div>
+      <div class="tx-log" id="adminLog">
+        <div class="entry"><span class="ts">init</span><span class="msg-info">Contrat DiplomeRegistry initialisé — Owner : 0x1234...abcd</span></div>
+        <div class="entry"><span class="ts">init</span><span class="msg-ok">Émetteur par défaut accordé à l'administrateur système</span></div>
+        <div class="entry"><span class="ts">init</span><span class="msg-ok">SNMP monitoring actif — 192.168.30.10 surveille VLAN 20</span></div>
+        <div class="entry"><span class="ts">init</span><span class="msg-info">ACL 100 : seul 192.168.10.20 autorisé vers VLAN 20 (blockchain)</span></div>
+        <div class="entry"><span class="ts">init</span><span class="msg-info">ACL 101 : VLAN 40 (Admin) → VLAN 10 (Web) autorisé</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  CERTCHAIN — MOTEUR BLOCKCHAIN SIMULÉ
+//  Hashing SHA-256 réel (Web Crypto API native du navigateur)
+//  Simulation fidèle d'une blockchain : blocs, tx, events
+// ═══════════════════════════════════════════════════════════════════
+
+// ── STATE ──────────────────────────────────────────────────────────
+const DB = {
+  wallet: null,
+  walletRole: null,  // 'owner' | 'emitter' | null
+  paused: false,
+  diplomas: [
+    {
+      id: 1,
+      hash: '0xa3f4b2c1d5e67890abcdef1234567890a3f4b2c1d5e67890abcdef1234567890',
+      nom: 'Meriem Trabelsi',
+      cin: '09876543',
+      univ: 'Université de Tunis El Manar',
+      filiere: 'Génie Informatique',
+      type: 'Master',
+      mention: 'Très Bien',
+      annee: '2023–2024',
+      date: '2024-06-15',
+      emitter: '0x1234...abcd',
+      txHash: '0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4',
+      block: 4821037,
+      ts: Date.now() - 86400000 * 30,
+      valide: true
+    },
+    {
+      id: 2,
+      hash: '0xb2c3d4e5f6a7b890cdef1234567890b2c3d4e5f6a7b890cdef1234567890b2c3',
+      nom: 'Youssef Hamdi',
+      cin: '11223344',
+      univ: 'Université de Carthage',
+      filiere: 'Finance Quantitative',
+      type: 'Licence',
+      mention: 'Bien',
+      annee: '2023–2024',
+      date: '2024-06-20',
+      emitter: '0x5678...ef01',
+      txHash: '0xe5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5',
+      block: 4821042,
+      ts: Date.now() - 86400000 * 20,
+      valide: true
+    },
+    {
+      id: 3,
+      hash: '0xc3d4e5f6a7b8c9d0ef1234567890c3d4e5f6a7b8c9d0ef1234567890c3d4e5f6',
+      nom: 'Sarra Bouaziz',
+      cin: '55667788',
+      univ: 'Université de Sfax',
+      filiere: 'Droit des Affaires',
+      type: 'Master',
+      mention: 'Excellent',
+      annee: '2023–2024',
+      date: '2024-07-01',
+      emitter: '0x1234...abcd',
+      txHash: '0xf6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6',
+      block: 4821098,
+      ts: Date.now() - 86400000 * 10,
+      valide: true
+    },
+  ],
+  emitters: [
+    { addr: '0x1234...abcd', nom: 'Administrateur Système', role: 'owner', count: 2 },
+    { addr: '0x5678...ef01', nom: 'Université de Carthage', role: 'emitter', count: 1 },
+  ],
+  stats: { diplomes: 124, univs: 7, verifs: 832, revocs: 0 },
+  verifHistory: [],
+  blocks: [
+    { num: 4821000, label: 'Genesis', txCount: 1, hash: '0x0000...0000', genesis: true },
+    { num: 4821037, label: 'Block', txCount: 1, hash: null },
+    { num: 4821042, label: 'Block', txCount: 1, hash: null },
+    { num: 4821098, label: 'Block', txCount: 1, hash: null },
+  ],
+  nextBlock: 4821099
+};
+
+// ── UTILS ───────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function rnd(n) {
+  return Array.from({length:n}, () => '0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+}
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return '0x' + Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function fmtDate(s) {
+  return new Date(s).toLocaleDateString('fr-FR', {year:'numeric',month:'long',day:'numeric'});
+}
+
+function now() {
+  return new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function animCount(el, target, suffix='') {
+  if (!el) return;
+  let cur = 0;
+  const step = Math.max(1, Math.ceil(target / 60));
+  const id = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur.toLocaleString() + suffix;
+    if (cur >= target) clearInterval(id);
+  }, 16);
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Lazy render on demand
+  if (name === 'explorer') renderExplorer();
+  if (name === 'admin')    renderAdmin();
+  if (name === 'accueil')  renderHomeStats();
+}
+
+// ── NOTIFICATION ────────────────────────────────────────────────────
+function notify(msg, type='ok') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3800);
+}
+
+// ── WALLET ──────────────────────────────────────────────────────────
+function connectWallet() {
+  // LIAISON RÉSEAU — ÉTAPE 4 :
+  // Ce wallet est connecté depuis l'Admin PC (192.168.40.20, VLAN 40)
+  // via le Bastion SSH (192.168.40.10). L'ACL 101 empêche tout accès
+  // depuis la DMZ (VLAN 10) vers le VLAN Admin — seul l'Admin peut émettre.
+  const addr = '0xAdmin' + rnd(34);
+  DB.wallet = addr;
+  DB.walletRole = 'owner';
+  const btn = document.getElementById('walletBtn');
+  btn.textContent = 'Admin · ' + addr.slice(0,6) + '...' + addr.slice(-4);
+  btn.classList.add('connected');
+  document.getElementById('ownerAddr').textContent = addr;
+  updateReqs();
+  addAdminLog('Wallet Admin connecté depuis 192.168.40.20 (VLAN 40) via Bastion SSH 192.168.40.10', 'ok');
+  addAdminLog('ACL 101 : accès VLAN 40 → VLAN 10 autorisé — rôle owner accordé', 'ok');
+  notify('✅ Wallet Admin connecté — VLAN 40 · rôle : Owner', 'ok');
+}
+
+// ── HOME STATS ──────────────────────────────────────────────────────
+function renderHomeStats() {
+  animCount(document.getElementById('hs1'), DB.stats.diplomes);
+  animCount(document.getElementById('hs2'), DB.stats.univs);
+  animCount(document.getElementById('hs3'), DB.stats.verifs);
+}
+
+// ── PREVIEW FORMULAIRE ──────────────────────────────────────────────
+let previewDebounce;
+function refreshPreview() {
+  clearTimeout(previewDebounce);
+  previewDebounce = setTimeout(async () => {
+    const nom     = document.getElementById('f-nom').value;
+    const univ    = document.getElementById('f-univ').value;
+    const type    = document.getElementById('f-type').value;
+    const filiere = document.getElementById('f-filiere').value;
+    const date    = document.getElementById('f-date').value;
+    const cin     = document.getElementById('f-cin').value;
+
+    document.getElementById('pv-nom').textContent    = nom     || 'Nom de l\'étudiant';
+    document.getElementById('pv-univ').textContent   = univ    || 'Université';
+    document.getElementById('pv-type').textContent   = type    || 'Diplôme';
+    document.getElementById('pv-filiere').textContent = filiere || 'Spécialité';
+    document.getElementById('pv-date').textContent   = date ? fmtDate(date) : 'Date d\'obtention';
+
+    // QR animé aléatoire
+    renderQR();
+
+    // Hash réel
+    if (nom && cin && univ) {
+      const h = await sha256(nom + cin + univ + filiere + type + date);
+      document.getElementById('hashDisplay').textContent = h;
+      document.getElementById('req3').textContent = '●';
+      document.getElementById('req3').style.color = 'var(--green)';
+    } else {
+      document.getElementById('hashDisplay').textContent = '— remplissez le formulaire pour générer le hash —';
+      document.getElementById('req3').textContent = '○';
+      document.getElementById('req3').style.color = 'var(--muted)';
+    }
+    updateReqs();
+  }, 200);
+}
+
+function renderQR() {
+  const grid = document.getElementById('qrGrid');
+  if (!grid) return;
+  // Pattern QR simplifié : coins fixes + centre aléatoire
+  const pattern = Array.from({length:49}, (_, i) => {
+    const r = Math.floor(i/7), c = i%7;
+    // Coins du QR (finder patterns)
+    if ((r<3&&c<3)||(r<3&&c>3)||(r>3&&c<3)) return 1;
+    return Math.random() > 0.5 ? 1 : 0;
+  });
+  grid.innerHTML = pattern.map(v => `<div class="qr-cell${v?' w':''}"></div>`).join('');
+}
+
+function updateReqs() {
+  const r1 = document.getElementById('req1');
+  const r2 = document.getElementById('req2');
+  if (!r1) return;
+
+  const hasWallet = !!DB.wallet;
+  const nom = document.getElementById('f-nom')?.value;
+  const cin = document.getElementById('f-cin')?.value;
+  const univ = document.getElementById('f-univ')?.value;
+  const type = document.getElementById('f-type')?.value;
+  const date = document.getElementById('f-date')?.value;
+  const allFilled = nom && cin && univ && type && date;
+
+  r1.textContent = hasWallet ? '●' : '○';
+  r1.style.color = hasWallet ? 'var(--green)' : 'var(--muted)';
+  r2.textContent = allFilled ? '●' : '○';
+  r2.style.color = allFilled ? 'var(--green)' : 'var(--muted)';
+}
+
+// ── ÉMETTRE UN DIPLÔME ──────────────────────────────────────────────
+async function emettre() {
+  const nom     = document.getElementById('f-nom').value.trim();
+  const cin     = document.getElementById('f-cin').value.trim();
+  const univ    = document.getElementById('f-univ').value;
+  const filiere = document.getElementById('f-filiere').value.trim();
+  const type    = document.getElementById('f-type').value;
+  const mention = document.getElementById('f-mention').value;
+  const date    = document.getElementById('f-date').value;
+  const annee   = document.getElementById('f-annee').value;
+
+  if (!nom || !cin || !univ || !filiere || !type || !date) {
+    notify('⚠️ Veuillez remplir tous les champs obligatoires (*)', 'err');
+    return;
+  }
+  if (!DB.wallet) {
+    notify('⚠️ Connectez votre wallet d\'abord', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('emitBtn');
+  btn.disabled = true;
+
+  // ÉTAPE 1 — Hash
+  setStep(2);
+  btn.innerHTML = '<span class="spin"></span> Génération du hash...';
+  addLog('🔐 Calcul SHA-256 en cours...', 'pending');
+  await sleep(600);
+
+  const hash = await sha256(nom + cin + univ + filiere + type + date);
+  addLog('✓ Hash SHA-256 généré : ' + hash.slice(0,18) + '...', 'ok');
+
+  // LIAISON RÉSEAU — ÉTAPE 2 :
+  // Le hash est transmis depuis l'API Server (192.168.10.20, VLAN 10)
+  // vers le Blockchain Node (192.168.20.10, VLAN 20) via port RPC 8545.
+  // L'ACL 100 autorise UNIQUEMENT 192.168.10.20 → 192.168.20.0/24.
+  addLog('📡 Transmission vers API Server 192.168.10.20 (VLAN 10)...', 'pending');
+
+  // ÉTAPE 2 — Signature
+  setStep(3);
+  btn.innerHTML = '<span class="spin"></span> Signature MetaMask...';
+  await sleep(800);
+  addLog('🖊 Transaction signée par ' + DB.wallet.slice(0,8) + '...', 'pending');
+
+  // ÉTAPE 3 — Broadcast
+  btn.innerHTML = '<span class="spin"></span> Diffusion sur Ethereum...';
+  await sleep(1000);
+  addLog('📡 Transaction broadcastée sur Sepolia...', 'pending');
+  addLog('⬡ ACL 100 : flux 192.168.10.20 → 192.168.20.10:8545 autorisé', 'ok');
+  await sleep(700);
+
+  // ÉTAPE 4 — Minage
+  btn.innerHTML = '<span class="spin"></span> En attente de confirmation...';
+  addLog('⛏ En attente du prochain bloc...', 'pending');
+  await sleep(900);
+
+  const txHash = '0x' + rnd(64);
+  const blockNum = DB.nextBlock++;
+  const ts = Date.now();
+
+  // Enregistrement
+  const newDiploma = {
+    id: DB.diplomas.length + 1,
+    hash, nom, cin, univ, filiere, type, mention,
+    annee: annee || new Date().getFullYear() + '–' + (new Date().getFullYear()+1),
+    date, emitter: DB.wallet.slice(0,6)+'...'+DB.wallet.slice(-4),
+    txHash, block: blockNum, ts, valide: true
+  };
+  DB.diplomas.push(newDiploma);
+
+  // Ajouter bloc
+  DB.blocks.push({ num: blockNum, label: 'Block', txCount: 1, hash: '0x'+rnd(8)+'...', latest: true });
+
+  // Mise à jour stats
+  DB.stats.diplomes++;
+  DB.stats.verifs;
+
+  setStep(4);
+  addLog('✅ Diplôme certifié ! Block #' + blockNum, 'ok');
+  addLog('   TX Hash : ' + txHash.slice(0,22) + '...', 'ok');
+  addLog('   Gaz utilisé : 94,521', 'info');
+  addLog('⬡ Monitoring Server 192.168.30.10 (VLAN 30) — bloc détecté via SNMP', 'info');
+
+  btn.innerHTML = '✅ Diplôme certifié avec succès !';
+  btn.style.background = 'var(--green)';
+  notify('🎓 Diplôme de ' + nom + ' ancré sur la blockchain !', 'ok');
+
+  // Update admin
+  addAdminLog('Diplôme #' + newDiploma.id + ' émis — ' + nom + ' — ' + univ, 'ok');
+
+  // Mise à jour du panneau Syslog du monitoring
+  const syslogBox = document.getElementById('syslogBox');
+  if (syslogBox) {
+    const newEntry = document.createElement('div');
+    newEntry.innerHTML =
+      `<span class="syslog-ok">✓</span> ` +
+      `<span class="syslog-ip">192.168.20.10</span> ` +
+      `Nouveau bloc #${blockNum} — diplôme certifié (${nom.split(' ')[0]}) ` +
+      `<span style="color:var(--muted);">[${now()}]</span>`;
+    syslogBox.appendChild(newEntry);
+    syslogBox.scrollTop = syslogBox.scrollHeight;
+  }
+
+  setTimeout(() => {
+    btn.innerHTML = '⛓ Certifier sur la Blockchain';
+    btn.style.background = '';
+    btn.disabled = false;
+    setStep(1);
+  }, 4000);
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('est'+i);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+    // Update dot
+    const dot = el.querySelector('.estep-dot');
+    if (dot) {
+      dot.textContent = i < n ? '✓' : i;
+    }
+  }
+}
+
+function addLog(msg, type='info') {
+  const log = document.getElementById('txLog');
+  if (!log) return;
+  const entry = document.createElement('div');
+  entry.className = 'entry';
+  entry.innerHTML = `<span class="ts">${now()}</span><span class="msg-${type}">${msg}</span>`;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// ── VÉRIFIER ─────────────────────────────────────────────────────────
+function setVMode(mode, btn) {
+  document.querySelectorAll('.vmode').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['hash','etudiant','qr'].forEach(m => {
+    document.getElementById('vm-'+m).style.display = m === mode ? 'block' : 'none';
+  });
+  document.getElementById('verifyResult').className = 'verify-result';
+}
+
+async function verifierParHash() {
+  const input = document.getElementById('v-hash').value.trim();
+  if (!input) { notify('⚠️ Entrez un hash', 'err'); return; }
+
+  // Chercher dans DB (match partiel)
+  const found = DB.diplomas.find(d =>
+    d.hash === input ||
+    d.hash.startsWith(input) ||
+    input.startsWith(d.hash.slice(0, 10))
+  );
+
+  await afficherVerif(found, input);
+}
+
+async function verifierParEtudiant() {
+  const q = document.getElementById('v-nom').value.trim().toLowerCase();
+  if (!q) { notify('⚠️ Entrez un nom ou CIN', 'err'); return; }
+
+  const found = DB.diplomas.find(d =>
+    d.nom.toLowerCase().includes(q) || d.cin.includes(q)
+  );
+  await afficherVerif(found, q);
+}
+
+async function simulerQR() {
+  notify('📷 QR Code scanné !', 'ok');
+  await sleep(400);
+  const d = DB.diplomas[Math.floor(Math.random() * DB.diplomas.length)];
+  await afficherVerif(d, d.hash);
+}
+
+async function afficherVerif(diplome, query) {
+  // Stats
+  DB.stats.verifs++;
+  document.getElementById('expVerifs') && (document.getElementById('expVerifs').textContent = DB.stats.verifs.toLocaleString());
+
+  const result = document.getElementById('verifyResult');
+  await sleep(300);
+
+  if (diplome && diplome.valide) {
+    result.className = 'verify-result valid';
+    result.innerHTML = `
+      <div class="result-header">
+        <div class="result-icon">✅</div>
+        <div>
+          <div class="result-title ok">Diplôme Authentique</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">Vérifié sur Ethereum Sepolia — Block #${diplome.block}</div>
+        </div>
+        <span class="badge badge-green" style="margin-left:auto;">VALIDE</span>
+      </div>
+      <hr class="divider">
+      <div class="result-grid">
+        <div class="rfield"><label>Titulaire</label><span>${diplome.nom}</span></div>
+        <div class="rfield"><label>CIN</label><span>${diplome.cin}</span></div>
+        <div class="rfield"><label>Université</label><span>${diplome.univ}</span></div>
+        <div class="rfield"><label>Filière</label><span>${diplome.filiere}</span></div>
+        <div class="rfield"><label>Diplôme</label><span>${diplome.type}</span></div>
+        <div class="rfield"><label>Mention</label><span style="color:var(--gold2)">${diplome.mention}</span></div>
+        <div class="rfield"><label>Date d'obtention</label><span>${fmtDate(diplome.date)}</span></div>
+        <div class="rfield"><label>Numéro de bloc</label><span>${diplome.block.toLocaleString()}</span></div>
+      </div>
+      <hr class="divider">
+      <div class="label" style="margin-bottom:6px;">Hash SHA-256</div>
+      <div class="mono-box">${diplome.hash}</div>
+      <div style="margin-top:8px;">
+        <div class="label" style="margin-bottom:4px;">Transaction Hash</div>
+        <div class="mono-box" style="color:var(--blue);">${diplome.txHash}</div>
+      </div>
+      <div style="margin-top:8px;font-size:0.65rem;color:var(--blue);padding:6px 10px;background:var(--blue2);border-radius:6px;border:1px solid rgba(91,156,246,0.2);">
+        ⬡ Vérification effectuée via : Internet → NAT (Routeur) → VLAN 10 (192.168.10.10) → API Server (192.168.10.20) → VLAN 20 (192.168.20.10) · ACL 100 : lecture autorisée
+      </div>
+    `;
+    addVerifHistory(query.slice(0,20)+'...', '✅ Valide', diplome.nom);
+    notify('✅ Diplôme authentique — ' + diplome.nom, 'ok');
+  } else if (diplome && !diplome.valide) {
+    result.className = 'verify-result invalid';
+    result.innerHTML = `
+      <div class="result-header">
+        <div class="result-icon">⛔</div>
+        <div>
+          <div class="result-title bad">Diplôme Révoqué</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">Ce diplôme a été révoqué par l'émetteur</div>
+        </div>
+        <span class="badge badge-red" style="margin-left:auto;">RÉVOQUÉ</span>
+      </div>
+      <p style="font-size:0.82rem;color:var(--dim);margin-top:1rem;line-height:1.6;">Le hash existe dans le registre mais le diplôme a été marqué comme révoqué. Contactez l'établissement émetteur pour plus d'informations.</p>
+    `;
+    addVerifHistory(query.slice(0,20)+'...', '⛔ Révoqué', diplome.nom);
+    notify('⛔ Diplôme révoqué', 'err');
+  } else {
+    result.className = 'verify-result invalid';
+    result.innerHTML = `
+      <div class="result-header">
+        <div class="result-icon">❌</div>
+        <div>
+          <div class="result-title bad">Diplôme Non Trouvé</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">Aucune correspondance dans le smart contract</div>
+        </div>
+        <span class="badge badge-red" style="margin-left:auto;">INVALIDE</span>
+      </div>
+      <p style="font-size:0.82rem;color:var(--dim);margin-top:1rem;line-height:1.6;">Ce hash ne correspond à aucun diplôme enregistré dans le contrat DiplomeRegistry. Ce document pourrait être falsifié ou non certifié.</p>
+    `;
+    addVerifHistory(query.slice(0,20)+'...', '❌ Non trouvé', '—');
+    notify('❌ Diplôme non trouvé dans le registre', 'err');
+  }
+}
+
+function addVerifHistory(hash, result, nom) {
+  DB.verifHistory.unshift({ hash, result, nom, time: now() });
+  const tbody = document.getElementById('verifHistoryTbody');
+  const empty = document.getElementById('verifEmpty');
+  if (empty) empty.style.display = 'none';
+  tbody.innerHTML = DB.verifHistory.slice(0,10).map(v => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:0.68rem;color:var(--muted)">${v.hash}</td>
+      <td>${v.result}</td>
+      <td style="color:var(--muted);font-size:0.72rem">${v.time}</td>
+    </tr>
+  `).join('');
+}
+
+// ── EXPLORER ──────────────────────────────────────────────────────────
+function renderExplorer() {
+  renderChain();
+  renderRegistre();
+
+  animCount(document.getElementById('expTotal'), DB.stats.diplomes);
+  animCount(document.getElementById('expUnivs'), DB.stats.univs);
+  animCount(document.getElementById('expVerifs'), DB.stats.verifs);
+  document.getElementById('regCount').textContent = DB.diplomas.length + ' entrées';
+
+  // ── MONITORING PANEL ──────────────────────────────────────────────
+  // Met à jour l'heure de dernière sync SNMP (Monitoring Server 192.168.30.10)
+  const syncEl = document.getElementById('snmpLastSync');
+  if (syncEl) syncEl.textContent = now();
+
+  // Met à jour le numéro du dernier bloc dans le panneau Syslog
+  const lastBlkEl = document.getElementById('lastBlockNum');
+  if (lastBlkEl && DB.diplomas.length > 0) {
+    const maxBlock = Math.max(...DB.diplomas.map(d => d.block));
+    lastBlkEl.textContent = maxBlock.toLocaleString();
+  }
+
+  // Refresh automatique toutes les 30 secondes (simulation SNMP polling)
+  clearInterval(window._snmpTimer);
+  window._snmpTimer = setInterval(() => {
+    if (syncEl) syncEl.textContent = now();
+    // Met à jour le dernier block dans syslog
+    if (lastBlkEl && DB.diplomas.length > 0) {
+      const maxBlock = Math.max(...DB.diplomas.map(d => d.block));
+      lastBlkEl.textContent = maxBlock.toLocaleString();
+    }
+    addAdminLog('SNMP sync 192.168.30.10 → 192.168.20.10 — ' + DB.diplomas.length + ' blocs confirmés', 'ok');
+  }, 30000);
+}
+
+function renderChain() {
+  const row = document.getElementById('chainRow');
+  if (!row) return;
+
+  const blocks = [
+    { num: 4821000, label: 'Genesis', txCount: 1, hash: '0x0000000000000000', genesis: true },
+    ...DB.diplomas.map((d, i) => ({
+      num: d.block,
+      label: 'Block',
+      txCount: 1,
+      hash: '0x' + rnd(16),
+    })),
+  ];
+
+  // Déduplique et trie
+  const seen = new Set();
+  const unique = blocks.filter(b => {
+    if (seen.has(b.num)) return false;
+    seen.add(b.num); return true;
+  }).sort((a,b) => a.num - b.num);
+
+  // Marque le dernier
+  if (unique.length > 0) unique[unique.length-1].latest = true;
+
+  row.innerHTML = unique.map((blk, i) => `
+    ${i > 0 ? `<div class="chain-arrow"><svg width="28" height="16" viewBox="0 0 28 16" fill="none"><line x1="0" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1.5"/><polygon points="16,4 26,8 16,12" fill="currentColor"/></svg></div>` : ''}
+    <div class="blk${blk.genesis?' genesis':''}${blk.latest?' latest':''}" onclick="clickBlk(${blk.num},'${blk.hash}')">
+      <div class="blk-label">${blk.genesis ? 'Genesis' : blk.latest ? '★ Latest' : 'Block'}</div>
+      <div class="blk-num">#${blk.num.toLocaleString()}</div>
+      <div class="blk-hash">${blk.hash}</div>
+      <div class="blk-tx">📄 ${blk.txCount} transaction${blk.txCount>1?'s':''}</div>
+    </div>
+  `).join('');
+}
+
+function clickBlk(num, hash) {
+  notify('Block #' + num.toLocaleString() + ' — Hash: ' + hash, 'ok');
+}
+
+function renderRegistre() {
+  const tbody = document.getElementById('registreTbody');
+  if (!tbody) return;
+  tbody.innerHTML = DB.diplomas.map(d => `
+    <tr>
+      <td style="color:var(--muted)">#${d.id}</td>
+      <td>
+        <strong style="color:var(--bright)">${d.nom}</strong><br>
+        <span style="font-size:0.65rem;color:var(--muted)">CIN: ${d.cin}</span>
+      </td>
+      <td style="font-size:0.78rem;">${d.univ}</td>
+      <td>${d.filiere}</td>
+      <td><span class="badge badge-blue">${d.type}</span></td>
+      <td><span style="color:var(--gold2)">${d.mention}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${fmtDate(d.date)}</td>
+      <td>
+        <span class="mono-box" style="display:inline-block;padding:3px 8px;font-size:0.62rem;">${d.hash.slice(0,16)}...</span>
+      </td>
+      <td>${d.valide ? '<span class="badge badge-green">✓ Valide</span>' : '<span class="badge badge-red">✗ Révoqué</span>'}</td>
+      <td>
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:0.65rem;" onclick="openDiplomaModal(${d.id})">Voir</button>
+        ${d.valide ? `<button class="btn btn-red" style="padding:5px 10px;font-size:0.65rem;margin-left:4px;" onclick="revoquerDiploma(${d.id})">Révoquer</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── MODAL DIPLÔME ────────────────────────────────────────────────────
+function openDiplomaModal(id) {
+  const d = DB.diplomas.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('modalContent').innerHTML = `
+    <div class="cert" style="margin-bottom:1.5rem;">
+      <div class="cert-watermark">✦</div>
+      <div class="cert-logo">🏛</div>
+      <div class="cert-univ">${d.univ}</div>
+      <div class="cert-line"></div>
+      <div class="cert-title">Certifie que</div>
+      <div class="cert-name">${d.nom}</div>
+      <div class="cert-title" style="margin-top:4px;">a obtenu le diplôme de</div>
+      <div class="cert-degree">${d.type}</div>
+      <div class="cert-field">${d.filiere}</div>
+      <div class="cert-line"></div>
+      <div class="cert-date">${fmtDate(d.date)} — Mention : ${d.mention}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Hash SHA-256 (identifiant blockchain)</div>
+    <div class="mono-box" style="margin-bottom:1rem;">${d.hash}</div>
+    <div class="label" style="margin-bottom:6px;">Transaction Hash</div>
+    <div class="mono-box" style="color:var(--blue);margin-bottom:1rem;">${d.txHash}</div>
+    <div style="display:flex;gap:12px;font-size:0.78rem;color:var(--dim);">
+      <div>Block : <strong style="color:var(--gold2)">#${d.block.toLocaleString()}</strong></div>
+      <div>Émetteur : <strong style="color:var(--gold2)">${d.emitter}</strong></div>
+      <div>Statut : ${d.valide ? '<span class="badge badge-green">Valide</span>' : '<span class="badge badge-red">Révoqué</span>'}</div>
+    </div>
+  `;
+  document.getElementById('diplomaModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('diplomaModal').classList.remove('open');
+}
+
+// ── ADMIN ────────────────────────────────────────────────────────────
+function renderAdmin() {
+  animCount(document.getElementById('kpi1'), DB.stats.diplomes);
+  animCount(document.getElementById('kpi2'), DB.emitters.filter(e=>e.role!=='revoked').length);
+  animCount(document.getElementById('kpi3'), DB.stats.verifs);
+  animCount(document.getElementById('kpi4'), DB.stats.revocs);
+
+  renderEmetteurs();
+}
+
+function renderEmetteurs() {
+  const tbody = document.getElementById('emetteursTbody');
+  tbody.innerHTML = DB.emitters.map(e => `
+    <tr>
+      <td>${e.nom}</td>
+      <td><span style="font-size:0.65rem;color:var(--gold2)">${e.addr}</span></td>
+      <td>${e.count}</td>
+      <td><span class="role-chip ${e.role === 'owner' ? 'role-owner' : e.role === 'revoked' ? 'role-revoked' : 'role-emitter'}">${e.role === 'owner' ? '⭐ Owner' : e.role === 'revoked' ? '✗ Révoqué' : '✓ Émetteur'}</span></td>
+      <td>${e.role !== 'owner' && e.role !== 'revoked' ? `<button class="btn btn-red" style="padding:4px 10px;font-size:0.65px;" onclick="revoquerEmetteur('${e.addr}')">Révoquer</button>` : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function ajouterEmetteur() {
+  const addr = document.getElementById('a-addr').value.trim();
+  const nom  = document.getElementById('a-nom').value.trim();
+  if (!addr || !nom) { notify('⚠️ Remplissez les deux champs', 'err'); return; }
+
+  DB.emitters.push({ addr: addr.slice(0,6)+'...'+addr.slice(-4), nom, role: 'emitter', count: 0 });
+  DB.stats.univs++;
+
+  document.getElementById('a-addr').value = '';
+  document.getElementById('a-nom').value = '';
+
+  renderEmetteurs();
+  addAdminLog('Émetteur accordé : ' + nom + ' — ' + addr.slice(0,10) + '...', 'ok');
+  notify('✅ Rôle émetteur accordé à ' + nom, 'ok');
+}
+
+function revoquerEmetteur(addr) {
+  const e = DB.emitters.find(x => x.addr === addr);
+  if (e) {
+    e.role = 'revoked';
+    renderEmetteurs();
+    addAdminLog('Émetteur révoqué : ' + e.nom, 'err');
+    notify('🚫 Émetteur révoqué : ' + e.nom, 'err');
+  }
+}
+
+function revoquerDiploma(id) {
+  const d = DB.diplomas.find(x => x.id === id);
+  if (!d) return;
+  if (!confirm('Confirmer la révocation du diplôme de ' + d.nom + ' ?')) return;
+  d.valide = false;
+  DB.stats.revocs++;
+  renderRegistre();
+  addAdminLog('Diplôme #' + id + ' révoqué — ' + d.nom, 'err');
+  notify('⛔ Diplôme de ' + d.nom + ' révoqué', 'err');
+}
+
+function pauserContrat() {
+  DB.paused = true;
+  addAdminLog('Contrat mis en PAUSE par l\'owner', 'err');
+  notify('⏸ Contrat mis en pause. Aucune émission possible.', 'err');
+}
+
+function addAdminLog(msg, type='info') {
+  const log = document.getElementById('adminLog');
+  if (!log) return;
+  const entry = document.createElement('div');
+  entry.className = 'entry';
+  entry.innerHTML = `<span class="ts">${now()}</span><span class="msg-${type}">${msg}</span>`;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Date par défaut = aujourd'hui
+  const dateInput = document.getElementById('f-date');
+  if (dateInput) dateInput.valueAsDate = new Date();
+
+  // Stats accueil
+  renderHomeStats();
+
+  // QR initial
+  renderQR();
+
+  // Close modal on overlay click
+  document.getElementById('diplomaModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Pré-remplir le champ hash avec un exemple pour la démo
+  setTimeout(() => {
+    document.getElementById('v-hash').placeholder = DB.diplomas[0].hash.slice(0,20) + '... (exemple du diplôme #1)';
+  }, 500);
+});
+</script>
+</body>
+</html>
